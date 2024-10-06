@@ -23,42 +23,37 @@ int main(int argc, char *argv[]) {
     // std::cout << "Attempting to reverse SHA-256 Hash: [" << targetHash << "]" << std::endl;
 
     // Keyspace to try 
-    char keyspace[] = "ab";
-    // char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
+    // char keyspace[] = "abc";
+    char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
+    // char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     // 2nd attempt 
-    int maxLenth = 3;
+    int maxLenth = 4;
     for (int length = 1;length <= maxLenth; ++length) {
         std::vector<int> counter(length, 0); 
 
-        std::cout << "=============\nLength: " << length << std::endl;
-        // std::cout << "counter: " << counter.size() << std::endl;
-        // displayCounter(counter);
-
         while (true) {
             std::string currentString; 
-            // std::cout << "entering 3rd loop" << std::endl;
             for (int i = 0; i < length; i++) {
-                std::cout << "i: " << i << std::endl;
                 currentString += keyspace[counter[i]];
-                displayCounter(counter);
             }
             std::cout << currentString << std::endl;
+            std::string digest = hash(currentString);
+            std::cout << digest << std::endl;
 
-            int pos = length - 1;
-            std::cout << "pos: " << pos << std::endl;
-            while(pos >= 0) {
-                counter[pos] = counter[pos] + 1; 
+            int posInCounter = length - 1;
+            while(posInCounter >= 0) {
+                counter[posInCounter] = counter[posInCounter] + 1; 
 
-                if (counter[pos] == strlen(keyspace)) {
-                    counter[pos] = 0;
-                    pos--;
+                if (counter[posInCounter] == strlen(keyspace)) {
+                    counter[posInCounter] = 0;
+                    posInCounter--;
                 } else {
                     break;
                 }
             }
 
-            if (pos < 0) {
+            if (posInCounter < 0) {
                 break;
             }
         }
