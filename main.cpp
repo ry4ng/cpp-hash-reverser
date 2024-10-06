@@ -1,12 +1,14 @@
 #include <iostream>
-#include "sha256.h"
 #include <vector>
-
+#include <string.h>
+#include "sha256.h" // custom include  
 
 std::string hash(std::string plaintext);
 void displayCounter(std::vector<int> counter);
 
+// defaults
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
+bool verbose = false; 
 
 int main(int argc, char *argv[]) {
 
@@ -18,9 +20,8 @@ int main(int argc, char *argv[]) {
     }
 
     std::string targetHash = argv[1];
-    std::string guessedHash = "";
 
-    // std::cout << "Attempting to reverse SHA-256 Hash: [" << targetHash << "]" << std::endl;
+    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n" << std::endl;
 
     // Keyspace to try 
     // char keyspace[] = "abc";
@@ -28,18 +29,56 @@ int main(int argc, char *argv[]) {
     // char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     // 2nd attempt 
-    int maxLenth = 4;
-    for (int length = 1;length <= maxLenth; ++length) {
+    int minLength = 3;
+    int maxLength = 4;
+    bool matchFound = false;
+    std::string matchDigest;
+    std::string matchPlaintext; 
+    verbose = false;
+
+    // caclulate total bruteforce possibilities
+    long long numberOfPossibilities = 0;
+    for (int length = minLength; length <= maxLength; ++length) {
+        numberOfPossibilities += std::pow(strlen(keyspace), length);
+    }
+
+    // output parameters 
+    std::cout << "Min length: [" << minLength << "]" << std::endl;
+    std::cout << "Max length: [" << maxLength << "]" << std::endl;
+    std::cout << "Key space: [" << keyspace << "]" << std::endl;
+    std::cout << "Verbose: [" << verbose << "]" << std::endl;
+    std::cout << "Possibilities: [" << numberOfPossibilities << "]" << std::endl;
+
+    // begin main loop 
+    for (int length = minLength;length <= maxLength; ++length) {
+        if (matchFound) {
+            break;
+        }
         std::vector<int> counter(length, 0); 
 
         while (true) {
+            // generate the next string to hash 
             std::string currentString; 
             for (int i = 0; i < length; i++) {
                 currentString += keyspace[counter[i]];
             }
-            std::cout << currentString << std::endl;
+
+            // hash the string 
             std::string digest = hash(currentString);
-            std::cout << digest << std::endl;
+
+            // check for match 
+            if (digest == targetHash) {
+                matchFound = true;
+                matchDigest = digest;
+                matchPlaintext = currentString;
+                break;
+            }
+
+            // verbose output 
+            if (verbose) {
+                std::cout << currentString << std::endl;
+                std::cout << digest << std::endl;
+            }
 
             int posInCounter = length - 1;
             while(posInCounter >= 0) {
@@ -58,47 +97,13 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // for (int i = 0; i < counter.size(); ++i) {
-        //     std::cout << counter[i] << std::endl;
-        // }
-
-        std::cout << "" << std::endl;
     }
 
-    // 1st attempt 
-    // char guess[128] = "";
-    // std::vector<int> indices(1, 0);
-    
-    // int i = 0;
-    // int j = 0;
-    // while (guessedHash != targetHash) {
-
-    //     std::cout << "ind: " << keyspace[indices[i]] << std::endl;
-
-    //     guess[j] = keyspace[i];
-    //     guess[j-1] = keyspace[j-1];
-
-    //     std::cout << "i: " << i << std::endl;
-    //     std::cout << "j: " << j << std::endl;
-    //     std::cout << guess << "\n" << std::endl;
-        
-    //     if (i == strlen(keyspace) - 1) {
-    //         i = 0;
-    //         j++;
-    //         std::cout << "=================" << std::endl;
-    //     } else {
-    //         i++;
-    //     }
-     
-    //     if (j == 3) {
-    //         break;
-    //     }
-    // }
-
-    std::string input = "abc";
-    std::string digest = hash(input);
-    
-    // std::cout << "SHA-256 hash of '" << input << "': " << digest << std::endl;
+    if (matchFound) {
+        std::cout << "\nMatch found!" << std::endl;
+        std::cout << "Hash: [" << matchDigest << "]" << std::endl;
+        std::cout << "Plaintext: [" << matchPlaintext << "]\n" << std::endl;
+    }
     
     return 0;
 }
