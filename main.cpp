@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     // caclulate total bruteforce possibilities
     long long numberOfPossibilities = 0;
     for (int length = minLength; length <= maxLength; ++length) {
-        numberOfPossibilities += std::pow(strlen(keyspace), length);
+        numberOfPossibilities += pow(strlen(keyspace), length);
     }
 
     // output parameters 
