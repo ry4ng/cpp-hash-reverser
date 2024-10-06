@@ -1,12 +1,12 @@
-#ifndef SHA256_H
-#define SHA256_H
+#ifndef C_SHA256_H
+#define C_SHA256_H
 
 #include <string>
 #include <cstdint>
 
-class SHA256 {
+class C_SHA256 {
 public:
-    SHA256(); // Constructor
+    C_SHA256(); // Constructor
     void update(const uint8_t *data, size_t length); // Updates the hash with data
     std::string digest(); // Finalizes the hash and returns the result
 

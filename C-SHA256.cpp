@@ -1,10 +1,10 @@
-#include "sha256.h"
+#include "C-SHA256.h"
 #include <sstream>
 #include <iomanip>
 #include <cstring>
 
 // SHA-256 constants (first 32 bits of the fractional parts of the cube roots of the first 64 primes)
-const uint32_t SHA256::k[64] = {
+const uint32_t C_SHA256::k[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -15,18 +15,18 @@ const uint32_t SHA256::k[64] = {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
 // Initial hash values for SHA-256
-const uint32_t SHA256::initialHash[8] = {
+const uint32_t C_SHA256::initialHash[8] = {
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
     0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
 // Constructor
-SHA256::SHA256()
+C_SHA256::C_SHA256()
 {
     reset();
 }
 
 // Resets the internal state of the hash
-void SHA256::reset()
+void C_SHA256::reset()
 {
     memcpy(h, initialHash, sizeof(initialHash));
     bitLength = 0;
@@ -34,7 +34,7 @@ void SHA256::reset()
 }
 
 // Updates the hash with a chunk of data
-void SHA256::update(const uint8_t *data, size_t length)
+void C_SHA256::update(const uint8_t *data, size_t length)
 {
     for (size_t i = 0; i < length; ++i)
     {
@@ -49,7 +49,7 @@ void SHA256::update(const uint8_t *data, size_t length)
 }
 
 // Finalizes the hash and returns the result as a hex string
-std::string SHA256::digest()
+std::string C_SHA256::digest()
 {
     uint8_t padding[64] = {0x80};
     size_t paddingLength = (bufferLength < 56) ? (56 - bufferLength) : (120 - bufferLength);
@@ -78,7 +78,7 @@ std::string SHA256::digest()
 }
 
 // Processes a 512-bit chunk of data
-void SHA256::transform(const uint8_t *chunk)
+void C_SHA256::transform(const uint8_t *chunk)
 {
     uint32_t w[64];
     uint32_t a, b, c, d, e, f, g, temp_h;
@@ -134,7 +134,7 @@ void SHA256::transform(const uint8_t *chunk)
 }
 
 // Converts the hash digest to a hexadecimal string
-std::string SHA256::toHexString(const uint8_t *digest)
+std::string C_SHA256::toHexString(const uint8_t *digest)
 {
     std::stringstream ss;
     for (int i = 0; i < 32; ++i)
