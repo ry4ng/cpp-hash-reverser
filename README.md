@@ -35,4 +35,6 @@ $ g++ -std=c++11 main.cpp c-sha256.cpp SG-SHA256.cpp -lcrypto -o out/main -Wno-d
 
 https://github.com/System-Glitch/SHA256/tree/master
 
-### OpenSSL
+### OpenSSL (Deprecated and EVP Method)
+
+https://github.com/openssl/openssl/tree/master
