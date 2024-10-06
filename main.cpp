@@ -6,7 +6,8 @@
 #include "sha256.h"    // custom
 #include "SG-SHA256.h" // sg impl
 
-std::string hash(std::string plaintext);
+std::string customHash(std::string plaintext);
+std::string sgHash(std::string plaintext);
 
 // defaults
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
@@ -81,19 +82,8 @@ int main(int argc, char *argv[])
             }
 
             std::string digest;
-
-            //
-            // hash the string (custom)
-            //
-            digest = hash(currentString);
-
-            //
-            // hash the string (SG)
-            //
-            SG_SHA256 sha;
-            sha.update(currentString);
-            std::array<uint8_t, 32> SG_digest = sha.digest();
-            digest = SG_SHA256::toString(SG_digest);
+            digest = customHash(currentString); // Custom
+            // digest = sgHash(currentString); // SG
 
             // check for match
             if (digest == targetHash)
@@ -150,11 +140,18 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-std::string hash(std::string plaintext)
+std::string customHash(std::string plaintext)
 {
     // Create a SHA256 object and hash the input
     SHA256 sha256;
     sha256.update(reinterpret_cast<const uint8_t *>(plaintext.c_str()), plaintext.length());
-    std::string hash = sha256.digest();
-    return hash;
+    return sha256.digest();
+}
+
+std::string sgHash(std::string plaintext)
+{
+    // Create a SHA256 object and hash the input
+    SG_SHA256 sha;
+    sha.update(plaintext);
+    return SG_SHA256::toString(sha.digest());
 }
