@@ -5,7 +5,6 @@
 #include "sha256.h" // custom include
 
 std::string hash(std::string plaintext);
-void displayCounter(std::vector<int> counter);
 
 // defaults
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
@@ -21,11 +20,10 @@ int main(int argc, char *argv[])
         std::cout << "No hash provided, quitting." << std::endl;
         return 0;
     }
-
+    
+    // get target hash from 1st argument 
     std::string targetHash = argv[1];
-
-    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n"
-              << std::endl;
+    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n" << std::endl;
 
     // Keyspace to try
     // char keyspace[] = "abc";
@@ -132,20 +130,4 @@ std::string hash(std::string plaintext)
     sha256.update(reinterpret_cast<const uint8_t *>(plaintext.c_str()), plaintext.length());
     std::string hash = sha256.digest();
     return hash;
-}
-
-void displayCounter(std::vector<int> counter)
-{
-    // Display content of the counter
-    std::cout << "[";
-    for (int i = 0; i < counter.size(); ++i)
-    {
-        std::cout << counter[i];
-        // If it's not the last element, print a comma and space
-        if (i < counter.size() - 1)
-        {
-            std::cout << ", ";
-        }
-    }
-    std::cout << "]" << std::endl;
 }
