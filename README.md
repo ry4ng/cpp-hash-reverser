@@ -2,7 +2,8 @@
 
 A simple brute-force hash cracker written in C++.
 
-## Compile 
+## Compile
+
 ```bash
 $ g++ -std=c++11 main.cpp sha256.cpp SG-SHA256.cpp -o out/main
 ```
@@ -14,3 +15,5 @@ $ g++ -std=c++11 main.cpp sha256.cpp SG-SHA256.cpp -o out/main
 ### System-Glitch (SG)
 
 https://github.com/System-Glitch/SHA256/tree/master
+
+### OpenSSL

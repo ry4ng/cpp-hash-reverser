@@ -5,6 +5,7 @@
 // SHA-256 Implemenations
 #include "sha256.h"    // custom
 #include "SG-SHA256.h" // sg impl
+// #include <openssl/sha.h>
 
 std::string customHash(std::string plaintext);
 std::string sgHash(std::string plaintext);
