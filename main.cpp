@@ -35,16 +35,16 @@ int main(int argc, char *argv[])
     std::string matchDigest;
     std::string matchPlaintext;
     verbose = false;
-    
-    // get values from arguments 
+
+    // get values from arguments
     // TODO: More argument validation (avoid seg faults etc.)
     std::string targetHash = argv[1];
     minLength = atoi(argv[2]);
     maxLength = atoi(argv[3]);
 
-    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n" << std::endl;
+    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n"
+              << std::endl;
 
-    // 2nd attempt
     // caclulate total bruteforce possibilities
     long long numberOfPossibilities = 0;
     for (int length = minLength; length <= maxLength; ++length)
@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     std::cout << "Verbose: [" << verbose << "]" << std::endl;
     std::cout << "Possibilities: [" << numberOfPossibilities << "]" << std::endl;
 
+    // 2nd attempt
     // begin main loop
     for (int length = minLength; length <= maxLength; ++length)
     {
@@ -125,10 +126,11 @@ int main(int argc, char *argv[])
         std::cout << "Hash: [" << matchDigest << "]" << std::endl;
         std::cout << "Plaintext: [" << matchPlaintext << "]\n"
                   << std::endl;
-    } 
-    else 
+    }
+    else
     {
-        std::cout << "\nNo matches found!\n" << std::endl;
+        std::cout << "\nNo matches found!\n"
+                  << std::endl;
     }
 
     return 0;
