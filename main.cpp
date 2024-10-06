@@ -2,7 +2,9 @@
 #include <vector>
 #include <string.h>
 #include <cmath>
-#include "sha256.h" // custom include
+// SHA-256 Implemenations
+#include "sha256.h"    // custom
+#include "SG-SHA256.h" // sg impl
 
 std::string hash(std::string plaintext);
 
@@ -11,8 +13,8 @@ char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
 bool verbose = false;
 
 // testing hashes
-// "U Can't Crack This - MC Bruteforcer"
-// e2c56a1f4ee4641ed347092f34ba53eab0f144332872408985bda44d4ffbc8fa
+// "U Can't Crack This - MC Bruteforcer": e2c56a1f4ee4641ed347092f34ba53eab0f144332872408985bda44d4ffbc8fa
+// "bbb":3e744b9dc39389baf0c5a0660589b8402f3dbb49b89b3e75f2c9355852a3c677
 
 int main(int argc, char *argv[])
 {
@@ -78,8 +80,20 @@ int main(int argc, char *argv[])
                 currentString += keyspace[counter[i]];
             }
 
-            // hash the string
-            std::string digest = hash(currentString);
+            std::string digest;
+
+            //
+            // hash the string (custom)
+            //
+            digest = hash(currentString);
+
+            //
+            // hash the string (SG)
+            //
+            SG_SHA256 sha;
+            sha.update(currentString);
+            std::array<uint8_t, 32> SG_digest = sha.digest();
+            digest = SG_SHA256::toString(SG_digest);
 
             // check for match
             if (digest == targetHash)
