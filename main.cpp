@@ -10,6 +10,10 @@ std::string hash(std::string plaintext);
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
 bool verbose = false;
 
+// testing hashes
+// "U Can't Crack This - MC Bruteforcer"
+// e2c56a1f4ee4641ed347092f34ba53eab0f144332872408985bda44d4ffbc8fa
+
 int main(int argc, char *argv[])
 {
     // Check an arguement (hash) has been passed
