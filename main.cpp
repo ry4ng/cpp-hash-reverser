@@ -12,7 +12,7 @@
 
 std::string customHash(std::string plaintext);
 std::string sgHash(std::string plaintext);
-std::string opensslHash(std::string plaintext);
+std::string opensslHash(const std::string& plaintext);
 std::string opensslHashEvp(std::string plaintext);
 
 // defaults
@@ -165,7 +165,8 @@ std::string sgHash(std::string plaintext)
     return SG_SHA256::toString(sha.digest());
 }
 
-std::string opensslHash(std::string plaintext){
+std::string opensslHash(const std::string& plaintext) 
+{
     unsigned char hash[SHA256_DIGEST_LENGTH];
 
     SHA256_CTX sha256;
@@ -173,15 +174,20 @@ std::string opensslHash(std::string plaintext){
     SHA256_Update(&sha256, plaintext.c_str(), plaintext.size());
     SHA256_Final(hash, &sha256);
 
-    std::stringstream ss;
+    // Using a character array instead of stringstream for better performance
+    constexpr char hexChars[] = "0123456789abcdef";
+    std::string hashStr(SHA256_DIGEST_LENGTH * 2, '0');
 
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++){
-    ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>( hash[i] );
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        hashStr[2 * i] = hexChars[(hash[i] >> 4) & 0xF];
+        hashStr[2 * i + 1] = hexChars[hash[i] & 0xF];
     }
-    return ss.str();
+
+    return hashStr;
 }
 
-std::string opensslHashEvp(std::string plaintext) {
+std::string opensslHashEvp(std::string plaintext) 
+{
     // Create an EVP_MD_CTX for context handling
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     
