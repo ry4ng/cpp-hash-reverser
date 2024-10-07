@@ -22,6 +22,7 @@ bool verbose = false;
 // testing hashes
 // "U Can't Crack This - MC Bruteforcer": e2c56a1f4ee4641ed347092f34ba53eab0f144332872408985bda44d4ffbc8fa
 // "bbb":3e744b9dc39389baf0c5a0660589b8402f3dbb49b89b3e75f2c9355852a3c677
+// "ddgg":a8e8dfffc20660dec4a5c857630cb096ed53b3bd51e1879f8b27fa4f4a94b9c7
 
 int main(int argc, char *argv[])
 {
@@ -88,9 +89,9 @@ int main(int argc, char *argv[])
             }
 
             std::string digest;
-            // digest = customHash(currentString); // Custom
+            digest = customHash(currentString); // Custom
             // digest = sgHash(currentString); // SG
-            digest = opensslHash(currentString); // OpenSSL 
+            // digest = opensslHash(currentString); // OpenSSL 
             // digest = opensslHashEvp(currentString); // OpenSSL (EVP)
 
             // check for match

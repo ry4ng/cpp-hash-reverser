@@ -36,16 +36,30 @@ void C_SHA256::reset()
 // Updates the hash with a chunk of data
 void C_SHA256::update(const uint8_t *data, size_t length)
 {
-    for (size_t i = 0; i < length; ++i)
-    {
-        buffer[bufferLength++] = data[i];
-        bitLength += 8;
-        if (bufferLength == 64)
-        {
+    size_t i = 0;
+
+    // Process data in 64-byte chunks if there's enough data
+    if (bufferLength > 0) {
+        size_t remainingBufferSpace = 64 - bufferLength;
+        if (length >= remainingBufferSpace) {
+            memcpy(buffer + bufferLength, data, remainingBufferSpace);
             transform(buffer);
             bufferLength = 0;
+            i = remainingBufferSpace;
         }
     }
+
+    for (; i + 63 < length; i += 64) {
+        transform(data + i);
+    }
+
+    // Copy remaining data into the buffer
+    if (i < length) {
+        memcpy(buffer + bufferLength, data + i, length - i);
+        bufferLength += length - i;
+    }
+
+    bitLength += length * 8;
 }
 
 // Finalizes the hash and returns the result as a hex string
@@ -106,12 +120,12 @@ void C_SHA256::transform(const uint8_t *chunk)
 
     for (int i = 0; i < 64; ++i)
     {
-        uint32_t s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
-        uint32_t ch = (e & f) ^ (~e & g);
-        uint32_t temp1 = temp_h + s1 + ch + k[i] + w[i];
-        uint32_t s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
-        uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
-        uint32_t temp2 = s0 + maj;
+        uint32_t s1_e = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+        uint32_t ch_e = (e & f) ^ (~e & g);
+        uint32_t temp1 = temp_h + s1_e + ch_e + k[i] + w[i];
+        uint32_t s0_a = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+        uint32_t maj_ab = (a & b) ^ (a & c) ^ (b & c);
+        uint32_t temp2 = s0_a + maj_ab;
 
         temp_h = g;
         g = f;
@@ -136,10 +150,20 @@ void C_SHA256::transform(const uint8_t *chunk)
 // Converts the hash digest to a hexadecimal string
 std::string C_SHA256::toHexString(const uint8_t *digest)
 {
-    std::stringstream ss;
+    const char hexChars[] = "0123456789abcdef";
+    std::string hexStr(64, '0');
+
     for (int i = 0; i < 32; ++i)
     {
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)digest[i];
+        hexStr[2 * i] = hexChars[(digest[i] >> 4) & 0xF];
+        hexStr[2 * i + 1] = hexChars[digest[i] & 0xF];
     }
-    return ss.str();
+
+    return hexStr;
+}
+
+// Rotate right operation (static function to avoid redefinition error)
+static inline uint32_t rotr(uint32_t x, uint32_t n)
+{
+    return (x >> n) | (x << (32 - n));
 }
