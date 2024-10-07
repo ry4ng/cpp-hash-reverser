@@ -2,6 +2,13 @@
 
 A simple brute-force hash cracker written in C++.
 
+## Todo 
+
+- optimise OpenSSL (EVP) impl
+- optimise OpenSSL (Depricated) 
+- thousand delimiter for `numberOfPossibilities`
+- improve command line flags/args
+
 ## Install 
 
 MacOS
