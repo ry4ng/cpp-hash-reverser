@@ -82,10 +82,7 @@ int main(int argc, char *argv[])
     // begin main loop
     for (int length = minLength; length <= maxLength; ++length)
     {
-        if (matchFound)
-        {
-            break;
-        }
+        if (matchFound) break;
         std::vector<int> counter(length, 0);
 
         while (true)
