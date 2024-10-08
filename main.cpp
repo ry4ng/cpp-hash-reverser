@@ -16,7 +16,10 @@ std::string sgHash(std::string plaintext);
 std::string opensslV2Hash(const std::string& plaintext);
 std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext);
 std::string sgOHash(std::string& plaintext);
+
+// Auxiliary functions
 EVP_MD_CTX* createContext();
+void cleanupContext(EVP_MD_CTX* ctx);
 
 // defaults
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
@@ -200,31 +203,32 @@ std::string opensslV2Hash(const std::string& plaintext)
 
 std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext) 
 {
-    if (EVP_DigestUpdate(ctx, plaintext.c_str(), plaintext.size()) != 1) {
-        throw std::runtime_error("Failed to update digest");
-    }
+    // Update the context with the data to be hashed
+    EVP_DigestUpdate(ctx, plaintext.c_str(), plaintext.size());
     
     unsigned char hash[SHA256_DIGEST_LENGTH];
     unsigned int hashLength = 0;
 
-    if (EVP_DigestFinal_ex(ctx, hash, &hashLength) != 1) {
-        throw std::runtime_error("Failed to finalize digest");
-    }
+    // Finalise the digest calculation
+    EVP_DigestFinal_ex(ctx, hash, &hashLength);
 
+    // Use a thread-local static buffer to store the hex string
     constexpr char hexChars[] = "0123456789abcdef";
-    std::string hashStr(hashLength * 2, '0');
+    thread_local char hexBuffer[SHA256_DIGEST_LENGTH * 2 + 1]; // +1 for null terminator
 
+    // Convert the hash to a hexadecimal string
     for (unsigned int i = 0; i < hashLength; ++i) {
-        hashStr[2 * i] = hexChars[(hash[i] >> 4) & 0xF];
-        hashStr[2 * i + 1] = hexChars[hash[i] & 0xF];
+        hexBuffer[2 * i] = hexChars[(hash[i] >> 4) & 0xF];
+        hexBuffer[2 * i + 1] = hexChars[hash[i] & 0xF];
     }
+
+    // Null-terminate the buffer
+    hexBuffer[hashLength * 2] = '\0';
 
     // Reinitialize for the next hash
-    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
-        throw std::runtime_error("Failed to reinitialize digest");
-    }
+    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
 
-    return hashStr;
+    return std::string(hexBuffer);
 }
 
 std::string sgOHash(std::string& plaintext)
@@ -235,9 +239,9 @@ std::string sgOHash(std::string& plaintext)
     return SG_O_SHA256::toString(sha.digest());
 }
 
-// for the EVP method
 EVP_MD_CTX* createContext() 
 {
+    // for the EVP method
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     if (ctx == nullptr) {
         throw std::runtime_error("Failed to create EVP_MD_CTX");
@@ -251,5 +255,6 @@ EVP_MD_CTX* createContext()
 
 void cleanupContext(EVP_MD_CTX* ctx) 
 {
+    // for the EVP method
     EVP_MD_CTX_free(ctx);
 }
