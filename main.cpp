@@ -14,8 +14,9 @@
 std::string customV2Hash(const std::string& plaintext);
 std::string sgHash(std::string plaintext);
 std::string opensslV2Hash(const std::string& plaintext);
-std::string opensslHashEvp(std::string plaintext);
+std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext);
 std::string sgOHash(std::string& plaintext);
+EVP_MD_CTX* createContext();
 
 // defaults
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
@@ -72,6 +73,8 @@ int main(int argc, char *argv[])
     std::cout << "Verbose: [" << verbose << "]" << std::endl;
     std::cout << "Possibilities: [" << numberOfPossibilities << "]" << std::endl;
 
+    EVP_MD_CTX* ctx = createContext(); // For OpenSSL-EVP Only
+    
     // 2nd attempt
     // begin main loop
     for (int length = minLength; length <= maxLength; ++length)
@@ -95,8 +98,8 @@ int main(int argc, char *argv[])
             // digest = customV2Hash(currentString); // Custom
             // digest = sgHash(currentString); // SG
             // digest = opensslV2Hash(currentString); // OpenSSL 
-            // digest = opensslHashEvp(currentString); // OpenSSL (EVP)
-            digest = sgOHash(currentString); // SG
+            digest = opensslHashEvp(ctx, currentString); // OpenSSL (EVP)
+            // digest = sgOHash(currentString); // SG
 
             // check for match
             if (digest == targetHash)
@@ -150,6 +153,7 @@ int main(int argc, char *argv[])
                   << std::endl;
     }
 
+    cleanupContext(ctx); // For OpenSSL-EVP Only
     return 0;
 }
 
@@ -194,33 +198,33 @@ std::string opensslV2Hash(const std::string& plaintext)
     return hashStr;
 }
 
-std::string opensslHashEvp(std::string plaintext) 
+std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext) 
 {
-    // TODO: Optimise this implementation 
-    // Create an EVP_MD_CTX for context handling
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (EVP_DigestUpdate(ctx, plaintext.c_str(), plaintext.size()) != 1) {
+        throw std::runtime_error("Failed to update digest");
+    }
     
-    // Initialize the context to use SHA-256
-    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    unsigned int hashLength = 0;
 
-    // Update the context with the data to be hashed
-    EVP_DigestUpdate(ctx, plaintext.c_str(), plaintext.size());
-
-    unsigned char hash[EVP_MAX_MD_SIZE];  // Buffer to store the resulting hash
-    unsigned int hashLength = 0;          // To store the actual length of the hash
-    
-    EVP_DigestFinal_ex(ctx, hash, &hashLength);
-
-    // Free the context
-    EVP_MD_CTX_free(ctx);
-
-    // Convert the hash to a hexadecimal string
-    std::stringstream ss;
-    for (unsigned int i = 0; i < hashLength; i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    if (EVP_DigestFinal_ex(ctx, hash, &hashLength) != 1) {
+        throw std::runtime_error("Failed to finalize digest");
     }
 
-    return ss.str();
+    constexpr char hexChars[] = "0123456789abcdef";
+    std::string hashStr(hashLength * 2, '0');
+
+    for (unsigned int i = 0; i < hashLength; ++i) {
+        hashStr[2 * i] = hexChars[(hash[i] >> 4) & 0xF];
+        hashStr[2 * i + 1] = hexChars[hash[i] & 0xF];
+    }
+
+    // Reinitialize for the next hash
+    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
+        throw std::runtime_error("Failed to reinitialize digest");
+    }
+
+    return hashStr;
 }
 
 std::string sgOHash(std::string& plaintext)
@@ -229,4 +233,23 @@ std::string sgOHash(std::string& plaintext)
     SG_O_SHA256 sha;
     sha.update(plaintext);
     return SG_O_SHA256::toString(sha.digest());
+}
+
+// for the EVP method
+EVP_MD_CTX* createContext() 
+{
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (ctx == nullptr) {
+        throw std::runtime_error("Failed to create EVP_MD_CTX");
+    }
+    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
+        EVP_MD_CTX_free(ctx);
+        throw std::runtime_error("Failed to initialize digest");
+    }
+    return ctx;
+}
+
+void cleanupContext(EVP_MD_CTX* ctx) 
+{
+    EVP_MD_CTX_free(ctx);
 }
