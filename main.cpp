@@ -7,13 +7,15 @@
 // SHA-256 Implemenations
 #include "C-SHA256.h"    // custom
 #include "SG-SHA256.h" // sg impl
+#include "SG-O-SHA256.h" // sg (optimised) impl
 #include <openssl/sha.h> // openssl impl
 #include <openssl/evp.h> // openssl impl (new evp api)
 
-std::string customV2Hash(std::string plaintext);
+std::string customV2Hash(const std::string& plaintext);
 std::string sgHash(std::string plaintext);
 std::string opensslV2Hash(const std::string& plaintext);
 std::string opensslHashEvp(std::string plaintext);
+std::string sgOHash(std::string& plaintext);
 
 // defaults
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
@@ -37,8 +39,8 @@ int main(int argc, char *argv[])
 
     // Keyspace to try
     // char keyspace[] = "abc";
-    char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
-    // char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    // char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"£$%^&*()_+-=[]{};'#:@~\\|,<.>/?";
+    char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     int minLength = 2;
     int maxLength = 2;
@@ -90,10 +92,11 @@ int main(int argc, char *argv[])
             }
 
             std::string digest;
-            digest = customV2Hash(currentString); // Custom
+            // digest = customV2Hash(currentString); // Custom
             // digest = sgHash(currentString); // SG
             // digest = opensslV2Hash(currentString); // OpenSSL 
             // digest = opensslHashEvp(currentString); // OpenSSL (EVP)
+            digest = sgOHash(currentString); // SG
 
             // check for match
             if (digest == targetHash)
@@ -150,10 +153,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-std::string customV2Hash(std::string plaintext)
+std::string customV2Hash(const std::string& plaintext)
 {
     // C_SHA256 optimised 
     // Impl not yet optimised 
+    
     // Create a SHA256 object and hash the input
     C_SHA256 sha256;
     sha256.update(reinterpret_cast<const uint8_t *>(plaintext.c_str()), plaintext.length());
@@ -192,6 +196,7 @@ std::string opensslV2Hash(const std::string& plaintext)
 
 std::string opensslHashEvp(std::string plaintext) 
 {
+    // TODO: Optimise this implementation 
     // Create an EVP_MD_CTX for context handling
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     
@@ -216,4 +221,12 @@ std::string opensslHashEvp(std::string plaintext)
     }
 
     return ss.str();
+}
+
+std::string sgOHash(std::string& plaintext)
+{
+    // Create a SHA256 object and hash the input
+    SG_O_SHA256 sha;
+    sha.update(plaintext);
+    return SG_O_SHA256::toString(sha.digest());
 }
