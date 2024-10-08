@@ -8,6 +8,8 @@ A simple brute-force hash cracker written in C++.
 - optimise OpenSSL (Depricated) 
 - thousand delimiter for `numberOfPossibilities`
 - improve command line flags/args
+- progress indicator (progress bar or "most sig bit")
+- multi-threading / multi-processing 
 
 ## Install 
 
