@@ -51,6 +51,18 @@ MacOS / Windows (With OpenSSL and warning supression)
  g++ -std=c++11 main.cpp c-sha256.cpp SG-SHA256.cpp SG-O-SHA256.cpp -lcrypto -o out/main -Wno-deprecated-declarations 
 ```
 
+MacOS / Windows (With OpenSSL and warning supression) - *Multi-threaded*
+```bash
+ g++ -std=c++11 main-mt.cpp c-sha256.cpp SG-SHA256.cpp SG-O-SHA256.cpp -lcrypto -o out/main -Wno-deprecated-declarations 
+```
+
+## Running 
+
+MacOS - Benchmarking 
+```bash
+caffeinate /usr/bin/time ./out/main e2c56a1f4ee4641ed347092f34ba53eab0f144332872408985bda44d4ffbc8fa 1 4
+```
+
 ## SHA256 Implementations
 
 ### Custom
