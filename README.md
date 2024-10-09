@@ -36,16 +36,6 @@ $ g++-14 -std=c++11 -fopenmp main.cpp c-sha256.cpp SG-SHA256.cpp SG-O-SHA256.cpp
 
 ## Compile
 
-MacOS / Windows 
-```bash
-$ g++ -std=c++11 main.cpp C-SHA256.cpp SG-SHA256.cpp -o out/main
-```
-
-MacOS / Windows (With OpenSSL)
-```bash
-$ g++ -std=c++11 main.cpp C-SHA256.cpp SG-SHA256.cpp -lcrypto -o out/main
-```
-
 MacOS / Windows (With OpenSSL and warning supression)
 ```bash
  g++ -std=c++11 main.cpp c-sha256.cpp SG-SHA256.cpp SG-O-SHA256.cpp -lcrypto -o out/main -Wno-deprecated-declarations 
