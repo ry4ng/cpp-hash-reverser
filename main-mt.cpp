@@ -168,7 +168,7 @@ void bruteForceTask(const std::string &targetHash, int minLength, int maxLength,
             return;
         }
 
-        // From a quick test, this does not seem to impact performance 
+        // From a quick test, this does not seem to impact performance
         if (currentIndex % 100 == 0)
         {
             // Increment the number of hashes computed
@@ -217,7 +217,8 @@ int main(int argc, char *argv[])
 
     // Determine the number of threads to use
     int numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0) numThreads = 4; // Default to 4 threads if unable to determine
+    if (numThreads == 0)
+        numThreads = 4; // Default to 4 threads if unable to determine
     numThreads--;       // stops program from maxing out computer resources
     std::cout << "Threads available:\t[" << std::thread::hardware_concurrency() << "]" << std::endl;
     std::cout << "Threads utilising:\t[" << numThreads << "]" << std::endl;
@@ -274,8 +275,8 @@ int main(int argc, char *argv[])
     // PERFORMANCE SUMMARY
     auto endTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsedDuration = endTime - startTime; // Elapsed time in milliseconds as a floating-point value
-    double totalElapsedMilliseconds = elapsedDuration.count(); // Total time in milliseconds
-    double totalElapsedSeconds = totalElapsedMilliseconds / 1000.0; // Total time in seconds
+    double totalElapsedMilliseconds = elapsedDuration.count();                       // Total time in milliseconds
+    double totalElapsedSeconds = totalElapsedMilliseconds / 1000.0;                  // Total time in seconds
 
     // Calculate average hash rate using precise elapsed milliseconds
     double averageHashesPerSecond = (totalElapsedMilliseconds > 0) ? (static_cast<double>(progress.load()) / (totalElapsedMilliseconds / 1000.0)) : 0.0;
@@ -299,9 +300,13 @@ int main(int argc, char *argv[])
     // Print summary
     std::cout << "Total Time Elapsed:\t[" << elapsedTimeStr.str() << "]" << std::endl;
     std::cout << "Average Hashes/sec:\t[" << formatHashesPerSecond(averageHashesPerSecond) << "]" << std::endl;
-    if (doProgress) {
-        std::cout << "Peak Hashes/sec:\t[" << formatHashesPerSecond(peakHashesPerSecond.load()) << "]\n" << std::endl;
-    } else {
+    if (doProgress)
+    {
+        std::cout << "Peak Hashes/sec:\t[" << formatHashesPerSecond(peakHashesPerSecond.load()) << "]\n"
+                  << std::endl;
+    }
+    else
+    {
         std::cout << std::endl;
     }
 
