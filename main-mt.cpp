@@ -148,7 +148,8 @@ void bruteForceTask(const std::string &targetHash, int minLength, int maxLength,
         }
 
         // Update progress
-        if (doProgress) {
+        if (doProgress)
+        {
             if (currentIndex % 1000 == 0)
             {
                 progress.fetch_add(1000);
@@ -220,7 +221,8 @@ int main(int argc, char *argv[])
         threads.emplace_back(bruteForceTask, targetHash, minLength, maxLength, contexts[i], startIndex, endIndex, doProgress);
     }
 
-    if (doProgress) {
+    if (doProgress)
+    {
         // Create a thread to update the progress bar
         std::thread progressThread(updateProgress, totalCombinations, startTime);
         // Wait for the progress thread to complete
