@@ -13,6 +13,7 @@
 
 std::string customV2Hash(const std::string& plaintext);
 std::string sgHash(std::string plaintext);
+std::string opensslHash(std::string plaintext);
 std::string opensslV2Hash(const std::string& plaintext);
 std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext);
 std::string sgOHash(std::string& plaintext);
@@ -97,7 +98,8 @@ int main(int argc, char *argv[])
             std::string digest;
             // digest = customV2Hash(currentString); // Custom
             // digest = sgHash(currentString); // SG
-            // digest = opensslV2Hash(currentString); // OpenSSL 
+            // digest = opensslHash(currentString); // OpenSSL 
+            // digest = opensslV2Hash(currentString); // OpenSSLv2
             digest = opensslHashEvp(ctx, currentString); // OpenSSL (EVP)
             // digest = sgOHash(currentString); // SG
 
@@ -174,6 +176,22 @@ std::string sgHash(std::string plaintext)
     SG_SHA256 sha;
     sha.update(plaintext);
     return SG_SHA256::toString(sha.digest());
+}
+
+std::string opensslHash(std::string plaintext){
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, plaintext.c_str(), plaintext.size());
+    SHA256_Final(hash, &sha256);
+
+    std::stringstream ss;
+
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++){
+    ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>( hash[i] );
+    }
+    return ss.str();
 }
 
 std::string opensslV2Hash(const std::string& plaintext) 
