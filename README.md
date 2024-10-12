@@ -80,6 +80,12 @@ caffeinate /usr/bin/time ./out/main e2c56a1f4ee4641ed347092f34ba53eab0f144332872
 ./out/main a8e8dfffc20660dec4a5c857630cb096ed53b3bd51e1879f8b27fa4f4a94b9c7 1 4
 ```
 
+### Windows - Benchmarking
+
+```powershell
+Measure-Command { ./out/main a8e8dfffc20660dec4a5c857630cb096ed53b3bd51e1879f8b27fa4f4a94a3dd 1 4 | Out-Host }
+```
+
 ## SHA256 Implementations
 
 ### Custom
