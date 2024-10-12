@@ -110,7 +110,7 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
 }
 
 // Function that performs the brute-force task for each thread
-void bruteForceTask(const std::string &targetHash, int minLength, int maxLength, EVP_MD_CTX *ctx, long long startIndex, long long endIndex)
+void bruteForceTask(const std::string &targetHash, int minLength, int maxLength, EVP_MD_CTX *ctx, long long startIndex, long long endIndex, bool doProgress)
 {
     long long keyspaceSize = strlen(keyspace);
 
@@ -148,9 +148,11 @@ void bruteForceTask(const std::string &targetHash, int minLength, int maxLength,
         }
 
         // Update progress
-        if (currentIndex % 1000 == 0)
-        {
-            progress.fetch_add(1000);
+        if (doProgress) {
+            if (currentIndex % 1000 == 0)
+            {
+                progress.fetch_add(1000);
+            }
         }
     }
 }
@@ -168,6 +170,7 @@ int main(int argc, char *argv[])
     std::string targetHash = argv[1];
     int minLength = (argc > 2) ? atoi(argv[2]) : 1;
     int maxLength = (argc > 3) ? atoi(argv[3]) : 4;
+    bool doProgress = false; // flag to output progress whilst brute-forcing (false = increased performance)
 
     // Calculate total brute-force possibilities for all lengths
     long long numberOfPossibilities = 0;
@@ -214,20 +217,21 @@ int main(int argc, char *argv[])
         contexts[i] = createContext();
         long long startIndex = i * chunkSize;
         long long endIndex = (i == numThreads - 1) ? totalCombinations : startIndex + chunkSize;
-        threads.emplace_back(bruteForceTask, targetHash, minLength, maxLength, contexts[i], startIndex, endIndex);
+        threads.emplace_back(bruteForceTask, targetHash, minLength, maxLength, contexts[i], startIndex, endIndex, doProgress);
     }
 
-    // Create a thread to update the progress bar
-    std::thread progressThread(updateProgress, totalCombinations, startTime);
+    if (doProgress) {
+        // Create a thread to update the progress bar
+        std::thread progressThread(updateProgress, totalCombinations, startTime);
+        // Wait for the progress thread to complete
+        progressThread.join();
+    }
 
     // Wait for all threads to complete their work
     for (auto &t : threads)
     {
         t.join();
     }
-
-    // Wait for the progress thread to complete
-    progressThread.join();
 
     // Cleanup OpenSSL contexts
     for (auto ctx : contexts)
