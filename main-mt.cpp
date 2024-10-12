@@ -1,13 +1,13 @@
-#include <iostream>
-#include <vector>
-#include <cmath>
-#include <sstream>
-#include <iomanip>
-#include <string.h>
-#include <thread>
-#include <mutex>
 #include <atomic>
 #include <chrono>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <mutex>
+#include <sstream>
+#include <string.h>
+#include <thread>
+#include <vector>
 
 // SHA-256 Implementations
 #include "C-SHA256.h"    // custom
@@ -21,6 +21,7 @@ std::string opensslHashEvp(EVP_MD_CTX *ctx, const std::string &plaintext);
 // Auxiliary functions
 EVP_MD_CTX *createContext();
 void cleanupContext(EVP_MD_CTX *ctx);
+std::string formatHashesPerSecond(double hashesPerSecond);
 
 // Keyspace containing possible characters for brute-force
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -28,8 +29,12 @@ char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
 std::atomic<bool> matchFound(false);
 // Mutex to protect output to the console (to avoid overlapping prints)
 std::mutex outputMutex;
-// Atomic variable to track progress
+// Atomic variable to track progress (number of hashes computed)
 std::atomic<long long> progress(0);
+// Variables to track peak and average hashes per second
+std::atomic<double> peakHashesPerSecond(0.0);
+// Global variable to store end time
+std::chrono::time_point<std::chrono::high_resolution_clock> endTime;
 
 void updateProgress(long long totalCombinations, std::chrono::time_point<std::chrono::high_resolution_clock> startTime)
 {
@@ -41,13 +46,25 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
         int pos = static_cast<int>((currentProgress * barWidth) / totalCombinations);
 
         auto currentTime = std::chrono::high_resolution_clock::now();
-        auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+        auto elapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+        double elapsedSeconds = elapsedMilliseconds / 1000.0;
 
-        // Calculate elapsed time in days, hours, minutes, seconds
-        long long days = elapsedSeconds / 86400;
-        long long hours = (elapsedSeconds % 86400) / 3600;
-        long long minutes = (elapsedSeconds % 3600) / 60;
-        long long seconds = elapsedSeconds % 60;
+        // Calculate hashes per second
+        long long currentHashes = progress.load();
+        double hashesPerSecond = (elapsedSeconds > 0) ? static_cast<double>(currentHashes) / elapsedSeconds : 0.0;
+
+        // Update peak hash rate
+        if (hashesPerSecond > peakHashesPerSecond.load())
+        {
+            peakHashesPerSecond.store(hashesPerSecond);
+        }
+
+        // Calculate elapsed time in days, hours, minutes, seconds, milliseconds
+        long long days = elapsedMilliseconds / 86400000;
+        long long hours = (elapsedMilliseconds % 86400000) / 3600000;
+        long long minutes = (elapsedMilliseconds % 3600000) / 60000;
+        long long seconds = (elapsedMilliseconds % 60000) / 1000;
+        long long milliseconds = elapsedMilliseconds % 1000;
 
         std::ostringstream elapsedTimeStr;
         if (days > 0)
@@ -56,7 +73,7 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
             elapsedTimeStr << hours << "h ";
         if (minutes > 0 || hours > 0 || days > 0)
             elapsedTimeStr << minutes << "m ";
-        elapsedTimeStr << seconds << "s";
+        elapsedTimeStr << seconds << "s " << milliseconds << "ms";
 
         std::cout << "\rProgress: [";
         for (int i = 0; i < barWidth; ++i)
@@ -75,20 +92,25 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
             }
         }
         std::cout << "] " << std::fixed << std::setprecision(2) << percentage << "%";
-        std::cout << " | Time Elapsed: " << elapsedTimeStr.str() << std::flush;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::cout << " | Time Elapsed: " << elapsedTimeStr.str();
+        std::cout << " | Hashes/sec: " << formatHashesPerSecond(hashesPerSecond) << std::flush;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
+
     // Print final progress if all combinations have been checked or match is found
     if (progress.load() >= totalCombinations)
     {
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto totalElapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count();
+        endTime = std::chrono::high_resolution_clock::now();
+        auto totalElapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+        double totalElapsedSeconds = totalElapsedMilliseconds / 1000.0;
 
-        // Calculate elapsed time in days, hours, minutes, seconds
-        long long days = totalElapsedSeconds / 86400;
-        long long hours = (totalElapsedSeconds % 86400) / 3600;
-        long long minutes = (totalElapsedSeconds % 3600) / 60;
-        long long seconds = totalElapsedSeconds % 60;
+        // Calculate elapsed time in days, hours, minutes, seconds, milliseconds
+        long long days = totalElapsedMilliseconds / 86400000;
+        long long hours = (totalElapsedMilliseconds % 86400000) / 3600000;
+        long long minutes = (totalElapsedMilliseconds % 3600000) / 60000;
+        long long seconds = (totalElapsedMilliseconds % 60000) / 1000;
+        long long milliseconds = totalElapsedMilliseconds % 1000;
 
         std::ostringstream elapsedTimeStr;
         if (days > 0)
@@ -97,15 +119,14 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
             elapsedTimeStr << hours << "h ";
         if (minutes > 0 || hours > 0 || days > 0)
             elapsedTimeStr << minutes << "m ";
-        elapsedTimeStr << seconds << "s";
+        elapsedTimeStr << seconds << "s " << milliseconds << "ms";
 
         std::cout << "\rProgress: [";
         for (int i = 0; i < barWidth; ++i)
         {
             std::cout << "=";
         }
-        std::cout << "] 100.00% | Time Elapsed: " << elapsedTimeStr.str() << "\n"
-                  << std::endl;
+        std::cout << "] 100.00% | Time Elapsed: " << elapsedTimeStr.str() << std::endl;
     }
 }
 
@@ -147,13 +168,11 @@ void bruteForceTask(const std::string &targetHash, int minLength, int maxLength,
             return;
         }
 
-        // Update progress
-        if (doProgress)
+        // From a quick test, this does not seem to impact performance 
+        if (currentIndex % 100 == 0)
         {
-            if (currentIndex % 1000 == 0)
-            {
-                progress.fetch_add(1000);
-            }
+            // Increment the number of hashes computed
+            progress.fetch_add(100);
         }
     }
 }
@@ -198,19 +217,19 @@ int main(int argc, char *argv[])
 
     // Determine the number of threads to use
     int numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0)
-        numThreads = 4; // Default to 4 threads if unable to determine
+    if (numThreads == 0) numThreads = 4; // Default to 4 threads if unable to determine
     numThreads--;       // stops program from maxing out computer resources
-    std::cout << "Threads:\t\t[" << numThreads << "]\n"
-              << std::endl;
-
-    // Start the timer
-    auto startTime = std::chrono::high_resolution_clock::now();
+    std::cout << "Threads available:\t[" << std::thread::hardware_concurrency() << "]" << std::endl;
+    std::cout << "Threads utilising:\t[" << numThreads << "]" << std::endl;
 
     // Calculate the range of indices for each thread to process
     long long chunkSize = totalCombinations / numThreads;
+    std::cout << "Thread chunk size:\t[" << chunkSize << "]" << std::endl;
     std::vector<std::thread> threads;
     std::vector<EVP_MD_CTX *> contexts(numThreads);
+
+    // Start hash computation timer
+    auto startTime = std::chrono::high_resolution_clock::now();
 
     // Create threads and assign each a range of indices
     for (int i = 0; i < numThreads; ++i)
@@ -223,6 +242,7 @@ int main(int argc, char *argv[])
 
     if (doProgress)
     {
+        std::cout << std::endl;
         // Create a thread to update the progress bar
         std::thread progressThread(updateProgress, totalCombinations, startTime);
         // Wait for the progress thread to complete
@@ -235,6 +255,9 @@ int main(int argc, char *argv[])
         t.join();
     }
 
+    // Finish hash computation timer
+    endTime = std::chrono::high_resolution_clock::now();
+
     // Cleanup OpenSSL contexts
     for (auto ctx : contexts)
     {
@@ -246,6 +269,40 @@ int main(int argc, char *argv[])
     {
         std::cout << "\nNo matches found!\n"
                   << std::endl;
+    }
+
+    // PERFORMANCE SUMMARY
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsedDuration = endTime - startTime; // Elapsed time in milliseconds as a floating-point value
+    double totalElapsedMilliseconds = elapsedDuration.count(); // Total time in milliseconds
+    double totalElapsedSeconds = totalElapsedMilliseconds / 1000.0; // Total time in seconds
+
+    // Calculate average hash rate using precise elapsed milliseconds
+    double averageHashesPerSecond = (totalElapsedMilliseconds > 0) ? (static_cast<double>(progress.load()) / (totalElapsedMilliseconds / 1000.0)) : 0.0;
+
+    // Calculate elapsed time in days, hours, minutes, seconds, milliseconds
+    long long days = static_cast<long long>(totalElapsedMilliseconds) / 86400000;
+    long long hours = (static_cast<long long>(totalElapsedMilliseconds) % 86400000) / 3600000;
+    long long minutes = (static_cast<long long>(totalElapsedMilliseconds) % 3600000) / 60000;
+    long long seconds = (static_cast<long long>(totalElapsedMilliseconds) % 60000) / 1000;
+    double milliseconds = fmod(totalElapsedMilliseconds, 1000.0); // Use floating-point to retain precision
+
+    std::ostringstream elapsedTimeStr;
+    if (days > 0)
+        elapsedTimeStr << days << "d ";
+    if (hours > 0 || days > 0)
+        elapsedTimeStr << hours << "h ";
+    if (minutes > 0 || hours > 0 || days > 0)
+        elapsedTimeStr << minutes << "m ";
+    elapsedTimeStr << seconds << "s " << std::fixed << std::setprecision(2) << milliseconds << "ms";
+
+    // Print summary
+    std::cout << "Total Time Elapsed:\t[" << elapsedTimeStr.str() << "]" << std::endl;
+    std::cout << "Average Hashes/sec:\t[" << formatHashesPerSecond(averageHashesPerSecond) << "]" << std::endl;
+    if (doProgress) {
+        std::cout << "Peak Hashes/sec:\t[" << formatHashesPerSecond(peakHashesPerSecond.load()) << "]\n" << std::endl;
+    } else {
+        std::cout << std::endl;
     }
 
     return 0;
@@ -302,4 +359,28 @@ EVP_MD_CTX *createContext()
 void cleanupContext(EVP_MD_CTX *ctx)
 {
     EVP_MD_CTX_free(ctx);
+}
+
+// Function to format hashes per second with appropriate units
+std::string formatHashesPerSecond(double hashesPerSecond)
+{
+    std::ostringstream formatted;
+    if (hashesPerSecond >= 1e9)
+    {
+        formatted << std::fixed << std::setprecision(2) << (hashesPerSecond / 1e9) << " G";
+    }
+    else if (hashesPerSecond >= 1e6)
+    {
+        formatted << std::fixed << std::setprecision(2) << (hashesPerSecond / 1e6) << " M";
+    }
+    else if (hashesPerSecond >= 1e3)
+    {
+        formatted << std::fixed << std::setprecision(2) << (hashesPerSecond / 1e3) << " K";
+    }
+    else
+    {
+        formatted << std::fixed << std::setprecision(2) << hashesPerSecond;
+    }
+    formatted << " H/s";
+    return formatted.str();
 }
