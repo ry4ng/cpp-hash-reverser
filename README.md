@@ -38,12 +38,13 @@ $ g++-14 -std=c++11 -fopenmp main.cpp c-sha256.cpp SG-SHA256.cpp SG-O-SHA256.cpp
 
 ### Windows
 
-1. Install MiniGW from
-
--   https://github.com/niXman/mingw-builds-binaries/releases
--   `x86_64-14.2.0-release-posix-seh-ucrt-rt_v12-rev0.7z`
--   Unzip the file and add the `bin` directory to `PATH` enviornment variable
--   e.g. `C:\Users\Ryan\Downloads\mingw64\bin`
+1. Install vcpkg
+    - https://github.com/microsoft/vcpkg
+2. Install MiniGW
+    - https://github.com/niXman/mingw-builds-binaries/releases
+    - `x86_64-14.2.0-release-posix-seh-ucrt-rt_v12-rev0.7z`
+    - Unzip the file and add the `bin` directory to `PATH` enviornment variable
+    - e.g. `C:\Users\Ryan\Downloads\mingw64\bin`
 
 ## Compile
 
