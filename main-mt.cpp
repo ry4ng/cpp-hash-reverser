@@ -11,16 +11,16 @@
 
 // SHA-256 Implementations
 #include "C-SHA256.h"    // custom
-#include "SG-SHA256.h"    // sg impl
-#include "SG-O-SHA256.h"  // sg (optimised) impl
-#include <openssl/sha.h>  // openssl impl
-#include <openssl/evp.h>  // openssl impl (new evp api)
+#include "SG-SHA256.h"   // sg impl
+#include "SG-O-SHA256.h" // sg (optimised) impl
+#include <openssl/sha.h> // openssl impl
+#include <openssl/evp.h> // openssl impl (new evp api)
 
-std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext);
+std::string opensslHashEvp(EVP_MD_CTX *ctx, const std::string &plaintext);
 
 // Auxiliary functions
-EVP_MD_CTX* createContext();
-void cleanupContext(EVP_MD_CTX* ctx);
+EVP_MD_CTX *createContext();
+void cleanupContext(EVP_MD_CTX *ctx);
 
 // Keyspace containing possible characters for brute-force
 char keyspace[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -31,9 +31,11 @@ std::mutex outputMutex;
 // Atomic variable to track progress
 std::atomic<long long> progress(0);
 
-void updateProgress(long long totalCombinations, std::chrono::time_point<std::chrono::high_resolution_clock> startTime) {
-    const int barWidth = 75; // Width of the progress bar
-    while (!matchFound && progress.load() < totalCombinations) {
+void updateProgress(long long totalCombinations, std::chrono::time_point<std::chrono::high_resolution_clock> startTime)
+{
+    const int barWidth = 40; // Width of the progress bar
+    while (!matchFound && progress.load() < totalCombinations)
+    {
         long long currentProgress = progress.load();
         double percentage = (static_cast<double>(currentProgress) / totalCombinations) * 100;
         int pos = static_cast<int>((currentProgress * barWidth) / totalCombinations);
@@ -48,27 +50,37 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
         long long seconds = elapsedSeconds % 60;
 
         std::ostringstream elapsedTimeStr;
-        if (days > 0) elapsedTimeStr << days << "d ";
-        if (hours > 0 || days > 0) elapsedTimeStr << hours << "h ";
-        if (minutes > 0 || hours > 0 || days > 0) elapsedTimeStr << minutes << "m ";
+        if (days > 0)
+            elapsedTimeStr << days << "d ";
+        if (hours > 0 || days > 0)
+            elapsedTimeStr << hours << "h ";
+        if (minutes > 0 || hours > 0 || days > 0)
+            elapsedTimeStr << minutes << "m ";
         elapsedTimeStr << seconds << "s";
 
         std::cout << "\rProgress: [";
-        for (int i = 0; i < barWidth; ++i) {
-            if (i < pos) {
+        for (int i = 0; i < barWidth; ++i)
+        {
+            if (i < pos)
+            {
                 std::cout << "=";
-            } else if (i == pos) {
+            }
+            else if (i == pos)
+            {
                 std::cout << ">";
-            } else {
+            }
+            else
+            {
                 std::cout << " ";
             }
         }
         std::cout << "] " << std::fixed << std::setprecision(2) << percentage << "%";
         std::cout << " | Time Elapsed: " << elapsedTimeStr.str() << std::flush;
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     // Print final progress if all combinations have been checked or match is found
-    if (progress.load() >= totalCombinations) {
+    if (progress.load() >= totalCombinations)
+    {
         auto endTime = std::chrono::high_resolution_clock::now();
         auto totalElapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count();
 
@@ -79,34 +91,43 @@ void updateProgress(long long totalCombinations, std::chrono::time_point<std::ch
         long long seconds = totalElapsedSeconds % 60;
 
         std::ostringstream elapsedTimeStr;
-        if (days > 0) elapsedTimeStr << days << "d ";
-        if (hours > 0 || days > 0) elapsedTimeStr << hours << "h ";
-        if (minutes > 0 || hours > 0 || days > 0) elapsedTimeStr << minutes << "m ";
+        if (days > 0)
+            elapsedTimeStr << days << "d ";
+        if (hours > 0 || days > 0)
+            elapsedTimeStr << hours << "h ";
+        if (minutes > 0 || hours > 0 || days > 0)
+            elapsedTimeStr << minutes << "m ";
         elapsedTimeStr << seconds << "s";
 
         std::cout << "\rProgress: [";
-        for (int i = 0; i < barWidth; ++i) {
+        for (int i = 0; i < barWidth; ++i)
+        {
             std::cout << "=";
         }
-        std::cout << "] 100.00% | Time Elapsed: " << elapsedTimeStr.str() << "\n" << std::endl;
+        std::cout << "] 100.00% | Time Elapsed: " << elapsedTimeStr.str() << "\n"
+                  << std::endl;
     }
 }
 
 // Function that performs the brute-force task for each thread
-void bruteForceTask(const std::string& targetHash, int minLength, int maxLength, EVP_MD_CTX* ctx, long long startIndex, long long endIndex) {
+void bruteForceTask(const std::string &targetHash, int minLength, int maxLength, EVP_MD_CTX *ctx, long long startIndex, long long endIndex)
+{
     long long keyspaceSize = strlen(keyspace);
 
-    for (long long currentIndex = startIndex; currentIndex < endIndex && !matchFound; ++currentIndex) {
+    for (long long currentIndex = startIndex; currentIndex < endIndex && !matchFound; ++currentIndex)
+    {
         // Calculate the current string from the currentIndex
         long long tempIndex = currentIndex;
         std::string currentString;
         int length = minLength;
 
         // Generate the string corresponding to currentIndex
-        while (tempIndex > 0 || length <= maxLength) {
+        while (tempIndex > 0 || length <= maxLength)
+        {
             currentString.insert(currentString.begin(), keyspace[tempIndex % keyspaceSize]);
             tempIndex /= keyspaceSize;
-            if (tempIndex == 0 && currentString.length() >= minLength) {
+            if (tempIndex == 0 && currentString.length() >= minLength)
+            {
                 break;
             }
         }
@@ -115,25 +136,30 @@ void bruteForceTask(const std::string& targetHash, int minLength, int maxLength,
         std::string digest = opensslHashEvp(ctx, currentString);
 
         // Check if the generated hash matches the target hash
-        if (digest == targetHash) {
-            matchFound = true; // Update the atomic flag to indicate that a match is found
+        if (digest == targetHash)
+        {
+            matchFound = true;                             // Update the atomic flag to indicate that a match is found
             std::lock_guard<std::mutex> lock(outputMutex); // Lock the output to prevent race conditions
             std::cout << "\n\nMatch found!" << std::endl;
             std::cout << "Hash: [" << digest << "]" << std::endl;
-            std::cout << "Plaintext: [" << currentString << "]\n" << std::endl;
+            std::cout << "Plaintext: [" << currentString << "]\n"
+                      << std::endl;
             return;
         }
-        
+
         // Update progress
-        if (currentIndex % 1000 == 0) {
+        if (currentIndex % 1000 == 0)
+        {
             progress.fetch_add(1000);
         }
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     // Check if a hash has been provided as an argument
-    if (argc <= 1) {
+    if (argc <= 1)
+    {
         std::cout << "No hash provided, quitting." << std::endl;
         return 0;
     }
@@ -145,12 +171,14 @@ int main(int argc, char* argv[]) {
 
     // Calculate total brute-force possibilities for all lengths
     long long numberOfPossibilities = 0;
-    for (int length = minLength; length <= maxLength; ++length) {
+    for (int length = minLength; length <= maxLength; ++length)
+    {
         numberOfPossibilities += pow(strlen(keyspace), length);
     }
 
     // Output the parameters being used
-    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n" << std::endl;
+    std::cout << "\nAttempting to reverse SHA-256 Hash [" << targetHash << "]\n"
+              << std::endl;
     std::cout << "Key space:\t\t[" << keyspace << "]" << std::endl;
     std::cout << "Min length:\t\t[" << minLength << "]" << std::endl;
     std::cout << "Max length:\t\t[" << maxLength << "]" << std::endl;
@@ -159,15 +187,18 @@ int main(int argc, char* argv[]) {
     // Calculate total number of combinations for all lengths
     long long totalCombinations = 0;
     long long keyspaceSize = strlen(keyspace);
-    for (int length = minLength; length <= maxLength; ++length) {
+    for (int length = minLength; length <= maxLength; ++length)
+    {
         totalCombinations += pow(keyspaceSize, length);
     }
 
     // Determine the number of threads to use
     int numThreads = std::thread::hardware_concurrency();
-    if (numThreads == 0) numThreads = 4; // Default to 4 threads if unable to determine
-
-    std::cout << "Threads:\t\t[" << numThreads << "]\n" << std::endl;
+    if (numThreads == 0)
+        numThreads = 4; // Default to 4 threads if unable to determine
+    numThreads--;       // stops program from maxing out computer resources
+    std::cout << "Threads:\t\t[" << numThreads << "]\n"
+              << std::endl;
 
     // Start the timer
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -175,10 +206,11 @@ int main(int argc, char* argv[]) {
     // Calculate the range of indices for each thread to process
     long long chunkSize = totalCombinations / numThreads;
     std::vector<std::thread> threads;
-    std::vector<EVP_MD_CTX*> contexts(numThreads);
+    std::vector<EVP_MD_CTX *> contexts(numThreads);
 
     // Create threads and assign each a range of indices
-    for (int i = 0; i < numThreads; ++i) {
+    for (int i = 0; i < numThreads; ++i)
+    {
         contexts[i] = createContext();
         long long startIndex = i * chunkSize;
         long long endIndex = (i == numThreads - 1) ? totalCombinations : startIndex + chunkSize;
@@ -189,7 +221,8 @@ int main(int argc, char* argv[]) {
     std::thread progressThread(updateProgress, totalCombinations, startTime);
 
     // Wait for all threads to complete their work
-    for (auto& t : threads) {
+    for (auto &t : threads)
+    {
         t.join();
     }
 
@@ -197,20 +230,24 @@ int main(int argc, char* argv[]) {
     progressThread.join();
 
     // Cleanup OpenSSL contexts
-    for (auto ctx : contexts) {
+    for (auto ctx : contexts)
+    {
         cleanupContext(ctx);
     }
 
     // If no match was found, indicate this to the user
-    if (!matchFound) {
-        std::cout << "\nNo matches found!\n" << std::endl;
+    if (!matchFound)
+    {
+        std::cout << "\nNo matches found!\n"
+                  << std::endl;
     }
 
     return 0;
 }
 
 // Function to hash plaintext using OpenSSL EVP API
-std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext) {
+std::string opensslHashEvp(EVP_MD_CTX *ctx, const std::string &plaintext)
+{
     // Update the context with the data to be hashed
     EVP_DigestUpdate(ctx, plaintext.c_str(), plaintext.size());
 
@@ -224,7 +261,8 @@ std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext) {
     thread_local char hexBuffer[SHA256_DIGEST_LENGTH * 2 + 1]; // +1 for null terminator
 
     // Convert the hash to a hexadecimal string
-    for (unsigned int i = 0; i < hashLength; ++i) {
+    for (unsigned int i = 0; i < hashLength; ++i)
+    {
         hexBuffer[2 * i] = hexChars[(hash[i] >> 4) & 0xF];
         hexBuffer[2 * i + 1] = hexChars[hash[i] & 0xF];
     }
@@ -239,12 +277,15 @@ std::string opensslHashEvp(EVP_MD_CTX* ctx, const std::string& plaintext) {
 }
 
 // Function to create an OpenSSL EVP context
-EVP_MD_CTX* createContext() {
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (ctx == nullptr) {
+EVP_MD_CTX *createContext()
+{
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    if (ctx == nullptr)
+    {
         throw std::runtime_error("Failed to create EVP_MD_CTX");
     }
-    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
+    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1)
+    {
         EVP_MD_CTX_free(ctx);
         throw std::runtime_error("Failed to initialize digest");
     }
@@ -252,6 +293,7 @@ EVP_MD_CTX* createContext() {
 }
 
 // Function to clean up an OpenSSL EVP context
-void cleanupContext(EVP_MD_CTX* ctx) {
+void cleanupContext(EVP_MD_CTX *ctx)
+{
     EVP_MD_CTX_free(ctx);
 }
